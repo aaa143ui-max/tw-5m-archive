@@ -1,0 +1,35 @@
+name: 台股 5 分K 每日存檔
+
+# 台北 15:30（UTC 07:30）收盤後跑；GitHub 排程常晚幾小時沒關係——每次都往回補 7 天，已存的日期略過。
+# 存檔斷超過 6 天 → archive.py 失敗 → GitHub 寄信。
+on:
+  schedule:
+    - cron: "30 7 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tw5m
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install yfinance pandas
+      - run: python archive.py
+      - name: 存檔
+        if: always()
+        run: |
+          git config user.name  "aaa143ui-max"
+          git config user.email "274160760+aaa143ui-max@users.noreply.github.com"
+          git add data
+          git diff --staged --quiet || git commit -m "5分K $(TZ=Asia/Taipei date +%F)"
+          git push
