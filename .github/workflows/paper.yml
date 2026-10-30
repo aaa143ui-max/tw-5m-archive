@@ -1,0 +1,44 @@
+name: 自家打法紙上帳
+
+# 每天 00:20 UTC（台北 08:20）：日K 收完後跑。失敗 → GitHub 寄信。手動測試：Run workflow 選 dry=true（不動帳本）。
+on:
+  schedule:
+    - cron: "20 0 * * *"
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: "測試（不動帳本）"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: paper
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 跑紙上帳
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.dry }}" = "true" ]; then
+            python paper/paper_day.py --dry
+          else
+            python paper/paper_day.py
+          fi
+      - name: 存檔
+        run: |
+          git config user.name  "aaa143ui-max"
+          git config user.email "274160760+aaa143ui-max@users.noreply.github.com"
+          git add paper
+          git diff --staged --quiet || git commit -m "紙上帳 $(TZ=Asia/Taipei date +%F)"
+          git pull --rebase -q
+          git push
