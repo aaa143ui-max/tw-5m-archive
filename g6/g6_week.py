@@ -151,7 +151,13 @@ def main():
     st_path = os.path.join(HERE, "state.json")
     st = json.load(open(st_path, encoding="utf-8")) if os.path.exists(st_path) else dict(equity=START_EQ, pos={}, t=None, weeks=[])
 
-    below, bc, bma, bsrc = btc_below(today - ((today // D + 3) % 7) * D)
+    monday = today - ((today // D + 3) % 7) * D
+    wk = dt.datetime.utcfromtimestamp(monday / 1000).strftime("%Y-%m-%d")
+    if not dry and st["weeks"] and st["weeks"][-1]["week"] == wk:                     # 同一週只記一次帳：補跑後遲到的排程到這裡就停
+        print(f"{wk} 這週已記帳，略過")
+        return
+
+    below, bc, bma, bsrc = btc_below(monday)
     U = universe(today)
     syms = sorted(U)
     N = len(syms)
@@ -246,7 +252,6 @@ def main():
     if dry:
         open(os.path.join(HERE, "dry_run.md"), "w", encoding="utf-8").write(rep)
         return
-    wk = dt.datetime.utcfromtimestamp(today / 1000).strftime("%Y-%m-%d")
     os.makedirs(os.path.join(HERE, "weeks"), exist_ok=True)
     open(os.path.join(HERE, "weeks", f"{wk}.md"), "w", encoding="utf-8").write(rep)
     open(os.path.join(HERE, "latest.md"), "w", encoding="utf-8").write(rep)

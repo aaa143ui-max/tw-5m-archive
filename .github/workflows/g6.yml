@@ -1,10 +1,15 @@
 name: G6 每週紙上跟單＋滑價實測
 
-# 每週一 00:20 UTC（台北 08:20）：週K 收完後換倉。GitHub 排程晚一點沒關係。
+# 每週一 00:20 UTC（台北 08:20）：週K 收完後換倉。GitHub 排程實測常晚 5～7 小時，所以只當備援：
+# 台北 09:30 的 TG 雲端排程看到還沒有結果，會推 g6/RUN_REQUEST 立刻觸發這裡。
+# 同一週跑第二次會自己略過（g6_week.py 看 state.json），不會重複記帳。
 # 失敗 → GitHub 寄信。手動測試：Run workflow 選 dry=true（不動帳本）。
 on:
   schedule:
     - cron: "20 0 * * 1"
+  push:
+    branches: [main]
+    paths: ["g6/RUN_REQUEST"]
   workflow_dispatch:
     inputs:
       dry:
